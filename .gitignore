@@ -1,0 +1,5 @@
+Notebooks/.venv/
+# Jupyter Notebooks added manually when ready
+*.ipynb  
+.ipynb_checkpoints/
+tmp.txt
