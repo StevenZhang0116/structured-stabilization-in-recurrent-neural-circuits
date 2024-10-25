@@ -16,13 +16,13 @@
 # %% [markdown]
 # # Simulation of randomly connected RNN with symmetric iSTDP
 #
-# This notebook shows the simulation of a random network of condunctance-based leaky integrate-and-fire (LIF) neurons under a covariance-based inhibitory spike-timing dependent plasticity (STDP) rule. We use Brian2 to simulate the network.
+# This notebook simulates a random network of condunctance-based leaky integrate-and-fire (LIF) neurons under a covariance-based inhibitory spike-timing dependent plasticity (uSTDP) rule. The simuation is based on Brian2 (https://brian2.readthedocs.io)
 #
 # When using this code, please cite our work.
 #
-# > Dylan Festa, Claudia Cusseddu and Julijana Gjorgjieva ;  *Structured stabilization in recurrent neural circuits through inhibitory synaptic plasticity*
+# > Festa, Dylan, Cusseddu, Claudia and Gjorgjieva, Julijana (2024) ‘Structured stabilization in recurrent neural circuits through inhibitory synaptic plasticity’. bioRxiv, p. 2024.10.12.618014. Available at: https://doi.org/10.1101/2024.10.12.618014.
 #
-# This notebook is intended as a demonstration. Athough it contains the network simulation in full, it does not show the full analysis of the output data. See main README for instructions on how to fully replicate the figures of the paper.
+# This notebook is intended as a demonstration. Athough it contains the network simulation in full, it does not show the full analysis of the output data and results may differ due to random initialization. See main README for instructions on how to fully replicate the figures and anlysises of the paper in full.
 
 # %% [markdown]
 # ## Import packages
@@ -102,7 +102,7 @@ gamma = 20.0  # tau_minus = gamma * tau_plus
 #
 # The block below runs the full network simulation in Brian2. Note that the iSTDP rule is defined by the equations in `eq_on_pre` and `eq_on_post`, corresponding to Eq 7 in the publication.
 #
-# **The simulation takes over 50 min on Google Colab, and about 20 min on a laptop**
+# **The simulation takes over 50 min on Google Colab, and about 20 min on a modern laptop**
 
 # %%
 # %%time
@@ -241,7 +241,6 @@ print('******* \n All runs completed!\n*******')
 # %% [markdown]
 # ## Results
 #
-# For a full replication of the paper's figures, follow the pointer in the main README file.
 #
 # ### Population rates
 
@@ -254,9 +253,11 @@ pop_ri_times = pop_ri_mon.t / second
 pop_ri_rates = pop_ri_mon.smooth_rate(window='flat',width=0.5*second) / Hz
 
 # Create the plot
+nplot = 200
+idxplot = np.linspace(start=1,stop=len(pop_re_times)-1,num=nplot).round().astype(int)
 plt.figure(figsize=(10, 5))
-plt.plot(pop_re_times/60, pop_re_rates, label='Excitatory',color='blue')
-plt.plot(pop_ri_times/60, pop_ri_rates, label='Inhibitory',color='red')
+plt.plot(pop_re_times[idxplot]/60, pop_re_rates[idxplot], label='Excitatory',color='blue')
+plt.plot(pop_ri_times[idxplot]/60, pop_ri_rates[idxplot], label='Inhibitory',color='red')
 plt.xlabel('time (min)')
 plt.ylabel('population Rate (Hz)')
 plt.title('Population Rates over Time')
@@ -270,37 +271,32 @@ plt.show()
 # (this needs some improvement in the code, but the results is as intended)
 
 # %%
-# Get source and target indices for con_ei
-sources_ei = con_ei.i
-targets_ei = con_ei.j
-
-# Get source and target indices for con_ie
-sources_ie = con_ie.i
-targets_ie = con_ie.j
-
 # Initialize empty lists for mutual and unidirectional weights
 w_ie_mutual = []
 w_ie_unidirectional = []
+# count number of connections too
+n_mutual = 0
+n_uni = 0
+# build exc to inh weight matrix in full
+w_ei_dense = np.zeros((NE,NI))
+w_ei_dense[con_ei.i,con_ei.j]=w_ei
 
-# Iterate through con_ie connections to find unidirectional
-for source_ie, target_ie in zip(sources_ie, targets_ie):
-  # Check if a reciprocal connection exists in con_ei
-  mutual_connection = np.where((sources_ei == target_ie) & (targets_ei == source_ie))[0]
-  
-  # If NO mutual connection exists in con_ei, it's unidirectional
-  if len(mutual_connection) == 0:
-    w_ie_unidirectional.append(con_ie.w[sources_ie == source_ie][0])  # Append weight
+# now iterate over inh to exc connections
+n_con_ie = len(con_ie.w)
+for idx_ie_i, idx_ie_j,k in zip(con_ie.i, con_ie.j,range(n_con_ie)):
+    # Check if a reciprocal connection exists in con_ei
+    is_mutual =  w_ei_dense[idx_ie_j,idx_ie_i] > 1E-4
+    this_w = con_ie.w[k]        
+    if is_mutual:
+        n_mutual+=1
+        w_ie_mutual.append(this_w)
+    else:
+        n_uni+=1
+        w_ie_unidirectional.append(this_w)
 
-# Iterate through con_ei connections to find mutual (same as before)
-for source_ei, target_ei in zip(sources_ei, targets_ei):
-    # Check if a reciprocal connection exists in con_ie
-    mutual_connection = np.where((sources_ie == target_ei) & (targets_ie == source_ei))[0]
-    
-    if len(mutual_connection) > 0:
-        # If mutual connection exists, append weight to w_ie_mutual
-        w_ie_mutual.append(con_ie.w[mutual_connection[0]])  
-
-
+# print total mutual and total unidirectional
+print(f"found {n_mutual} mutual connections and {n_uni} unidirectional connections. In total {n_mutual+n_uni}")
+        
 # Convert lists to numpy arrays
 w_ie_mutual = np.array(w_ie_mutual)
 w_ie_unidirectional = np.array(w_ie_unidirectional)
@@ -328,10 +324,11 @@ ax2.hist(bins_mutual[:-1], bins_mutual, weights=hist_mutual, color='brown', alph
 ax2.hist(bins_unidirectional[:-1], bins_unidirectional, weights=hist_unidirectional, color='darkcyan', alpha=0.7, label='Unidirectional')
 ax2.set_yscale('log')  # Set logarithmic y-axis
 ax2.set_xlabel('Synaptic Weight')
-ax2.set_ylabel('Normalized Frequency (log scale)')
+ax2.set_ylabel('density (log scale)')
 ax2.set_title('Distribution of Weights (Logarithmic Scale)')
 ax2.legend()
 
 # Display plot
 plt.tight_layout()  # Adjust spacing between subplots
 plt.show()
+
