@@ -4,7 +4,7 @@ Authors: Dylan Festa, Claudia Cusseddu, Julijana Gjorgjieva
 
 ## Demo Notebooks
 
-The python notebooks in the "Notebooks" folder can be opened directly in Google Colab, using the link below, or they can be installed locally (see "Notebooks/installation_instructions.md"). The purpose of these notebooks is not to reproduce each figure, but rather to provide clear and easily accessible examples for the main results of the paper.
+The python notebooks in the "Notebooks" folder can be opened directly in Google Colab, using the link below, or they can be installed locally (see [Notebooks/installation_instructions.md](https://github.com/comp-neural-circuits/structured-stabilization-in-recurrent-neural-circuits/blob/main/Notebooks/installation_instructions.md)). The purpose of these notebooks is not to reproduce each figure, but rather to provide clear and easily accessible examples for the main results of the paper.
 
 | Notebook content | Link |
 | - | --- |
