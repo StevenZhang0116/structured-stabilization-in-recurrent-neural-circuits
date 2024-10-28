@@ -14,10 +14,10 @@
 # ---
 
 # %% [markdown]
-# # Simulation of randomly connected RNN with symmetric iSTDP
+# # Simulation of randomly connected RNN with antisymmetric iSTDP
 #
-# This notebook simulates a random network of condunctance-based leaky integrate-and-fire (LIF) neurons under a symmetric covariance-based inhibitory spike-timing dependent plasticity (iSTDP) rule. The simuation is based on Brian2 (https://brian2.readthedocs.io)
-# **This simulation replicates the results in Fig 3 B-F of the main paper**
+# This notebook simulates a random network of condunctance-based leaky integrate-and-fire (LIF) neurons under an antysimmetric covariance-based inhibitory spike-timing dependent plasticity (iSTDP) rule. The simuation is based on Brian2 (https://brian2.readthedocs.io).
+# **This simulation replicates the results in Fig 3 G-K of the main paper**
 #
 # When using this code, please cite our work.
 #
@@ -90,13 +90,13 @@ connection_prob_ii = 1.0 # denser is better
 # connection weights
 w_ee, w_ei, w_ie, w_ii = 1.0 , 1.0 , 1.8 , 0.3 # w_ie=3
 w_max = 80               # Maximum inhibitory weight
-# STDP parameters
-A0learn = 4E-2
-alpha_pre = -0.05
-alpha_post = 0.0
-theta = -1.0
-tauplus_stdp = 30.0    # STDP time constant tau_plus
-gamma = 20.0  # tau_minus = gamma * tau_plus
+# STDP parameters (antisymmetric, with some rate-regulation included)
+A0learn = 5E-3
+theta = -0.7
+gamma = 0.5
+alpha_pre = -0.7
+alpha_post = 0.2
+tauplus_stdp = 60.0    # STDP time constant (ms)
 
 # %% [markdown]
 # ## Network simulation code
@@ -154,38 +154,33 @@ con_ii.connect(condition='i!=j', p=connection_prob_ii)
 # ###########################################
 # Inhibitory Plasticity
 # ###########################################
-A0 = 0.0  # start with no learning
+A0 = 0.0 # start with no learning
 
 # derived parameters
 tauminus_stdp = gamma*tauplus_stdp
 # NOT scaled by A0 here (since it controls learning on/off)
-Aplus = 0.5*float(1/tauplus_stdp)*1E3
-Aminus = 0.5*float(theta/tauminus_stdp)*1E3
+Aplus = float(1/tauplus_stdp)*1E3
+Aminus = float(theta/tauminus_stdp)*1E3
 
 # simple traces for pre- and postsynaptic activity
 # (that need to be rescaled)
+
 eqs_stdp_inhib = '''
-w : 1
-dtrace_pre_plus/dt = -trace_pre_plus/(tauplus_stdp*ms) : 1 (event-driven)
-dtrace_pre_minus/dt = -trace_pre_minus/(tauminus_stdp*ms) : 1 (event-driven)
-dtrace_post_plus/dt = -trace_post_plus/(tauplus_stdp*ms) : 1 (event-driven)
-dtrace_post_minus/dt = -trace_post_minus/(tauminus_stdp*ms) : 1 (event-driven)
-'''
-
+    w : 1
+    dtrace_pre_plus/dt=-trace_pre_plus/(tauplus_stdp*ms) : 1 (event-driven)
+    dtrace_post_minus/dt=-trace_post_minus/(tauminus_stdp*ms) : 1 (event-driven)
+    '''
 eq_on_pre = '''
-trace_pre_plus += 1.0
-trace_pre_minus += 1.0
-w = clip(w + A0*(alpha_pre + Aplus*trace_post_plus + Aminus*trace_post_minus), 0, w_max)
-g_gaba += w*nS
-'''
-
+    trace_pre_plus += 1.0
+    w = clip(w + A0*(alpha_pre + Aminus*trace_post_minus), 0, w_max)
+    g_gaba += w*nS
+    '''
 eq_on_post = '''
-trace_post_plus += 1.0
-trace_post_minus += 1.0
-w = clip(w + A0*(alpha_post + Aplus*trace_pre_plus + Aminus*trace_pre_minus), 0, w_max)
-'''
+    trace_post_minus += 1.0
+    w = clip(w + A0*(alpha_post + Aplus*trace_pre_plus), 0, w_max)
+    '''
 
-con_ie = Synapses(Pi, Pe, model=eqs_stdp_inhib, on_pre=eq_on_pre, on_post=eq_on_post)
+con_ie = Synapses(Pi, Pe, model=eqs_stdp_inhib,on_pre=eq_on_pre,on_post=eq_on_post)
 con_ie.connect()
 con_ie.w = w_ie
 
@@ -267,10 +262,12 @@ plt.grid(True)
 plt.show()
 
 # %% [markdown]
-# This plot shows that, before plasticity starts, population rates are near saturation, therefore the system is unstable. Inhibitory plasticity reduces the firing rates to much lower levels. The circuit is therefore inhibition-stabilized. 
+# This plot shows that, before plasticity starts, population rates are near saturation, therefore the system is unstable. Inhibitory plasticity reduces the firing rates to much lower levels. The circuit is therefore inhibition-stabilized. The very sharp drop in rates here is due to the parameter choice in the inhibitory plasticity rule.
 
 # %% [markdown]
 # ### Distribution of final mutual vs unidirectional weights
+#
+# (this needs some improvement in the code, but the results is as intended)
 
 # %%
 # Initialize empty lists for mutual and unidirectional weights
@@ -303,8 +300,8 @@ print(f"found {n_mutual} mutual connections and {n_uni} unidirectional connectio
 w_ie_mutual = np.array(w_ie_mutual)
 w_ie_unidirectional = np.array(w_ie_unidirectional)
 # Calculate histogram values and normalize
-hist_mutual, bins_mutual = np.histogram(w_ie_mutual, bins=np.arange(0, 82, 1), density=True)
-hist_unidirectional, bins_unidirectional = np.histogram(w_ie_unidirectional, bins=np.arange(0, 82, 1), density=True)
+hist_mutual, bins_mutual = np.histogram(w_ie_mutual, bins=np.arange(0,25, 1), density=True)
+hist_unidirectional, bins_unidirectional = np.histogram(w_ie_unidirectional, bins=np.arange(0, 25, 1), density=True)
 
 # Replace zero values with a small positive value to avoid log(0) error
 hist_mutual[hist_mutual == 0] = 1e-6 
@@ -336,4 +333,4 @@ plt.show()
 
 
 # %% [markdown]
-# When examining the inh to exc weights after learning, one can clearly see a net separation between mutual connections and unidirectional connections. The choice of symmetric, covariance-dominated inhibitory plasticity results in much stronger mutual connections than unidirectional connections.
+# When examining the inh to exc weights after learning, one can clearly see a net separation between mutual connections and unidirectional connections. The choice of antisymmetric, covariance-dominated inhibitory plasticity results in much stronger unidirectional connections than mutual connections.
