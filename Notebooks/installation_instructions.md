@@ -31,5 +31,9 @@ If you experience issues, or you notice bugs, please open an issue in this repos
 
 ---
 
-
 <img src="../ImagesForReadme/work_in_progress.webp" alt="Work in progress!" width="600"/>
+
+
+## License
+
+This code is released under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/). You are free to use, modify, and distribute this software, provided that you give appropriate credit to the original authors.
