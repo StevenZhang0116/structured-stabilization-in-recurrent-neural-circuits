@@ -1,5 +1,15 @@
-Notebooks/.venv/
-# Jupyter Notebooks added manually when ready
-*.ipynb  
+Notebooks/
+.venv/
+.vscode/
+
+# Jupyter Notebooks are committed manually
+*.ipynb
 .ipynb_checkpoints/
 tmp.txt
+*.pkl
+__pycache__/
+*.py[cod]
+*$py.class
+
+.DS_Store
+

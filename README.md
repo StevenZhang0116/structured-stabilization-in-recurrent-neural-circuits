@@ -22,6 +22,7 @@ The python notebooks in the "Notebooks" folder can be opened directly in Google 
 | - | --- |
 |01 - Random network with symmetric iSTDP | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/comp-neural-circuits/structured-stabilization-in-recurrent-neural-circuits/blob/main/Notebooks/01_random_network_symmetric.ipynb) |
 |02 - Random network with antisymmetric iSTDP | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/comp-neural-circuits/structured-stabilization-in-recurrent-neural-circuits/blob/main/Notebooks/02_random_network_antisymmetric.ipynb) |
+|03 - Ring-like excitatory connectivity with two interneuron populations | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/comp-neural-circuits/structured-stabilization-in-recurrent-neural-circuits/blob/main/Notebooks/03_ring_network.ipynb) |
 
 ---
 
