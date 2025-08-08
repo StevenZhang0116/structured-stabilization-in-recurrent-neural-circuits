@@ -1,9 +1,9 @@
-Notebooks/
+# Notebooks/
 .venv/
 .vscode/
 
 # Jupyter Notebooks are committed manually
-*.ipynb
+# .ipynb
 .ipynb_checkpoints/
 tmp.txt
 *.pkl
