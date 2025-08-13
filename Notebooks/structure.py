@@ -182,7 +182,7 @@ def make_torus_pre_post_fixed_sum(pre_pos, post_pos, wsum, sx, sy,
     if exp_sum > 0:
         W *= (wsum / exp_sum)
     
-    return W
+    return W, R
 
 def wmat_to_lists(W, w_threshold=1e-9):
     """
